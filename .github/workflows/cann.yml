@@ -1,0 +1,32 @@
+name: CANN build and sample
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.asc'
+      - CMakeLists.txt
+      - '*.py'
+      - requirements.txt
+      - run.sh
+      - .github/workflows/cann.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: [self-hosted, linux, cann-9]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compile for the judge architecture and run the CPU sample
+        shell: bash
+        run: |
+          source "${CANN_SET_ENV:-/usr/local/Ascend/ascend-toolkit/set_env.sh}"
+          set -euo pipefail
+          cmake -S . -B build-npu -DCMAKE_ASC_RUN_MODE=npu -DCMAKE_ASC_ARCHITECTURES=dav-2201
+          cmake --build build-npu --parallel 4
+          bash run.sh cpu
